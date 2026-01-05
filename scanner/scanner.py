@@ -1,3 +1,6 @@
+from .token_type import TokenType
+from .token import Token
+
 class Scanner:
     def __init__(self, source):
         self.source = source
@@ -41,5 +44,47 @@ class Scanner:
             return True
         else:
             return False
+
+
+    def add_token(self, token_type: TokenType, literal = None):
+        lexeme = self.source[self.start : self.current]
+        token = Token(token_type, lexeme, literal, self.line)
+        self.tokens.append(token)
+
+
+    def scan_token(self):
+        current_char = self.advance()
+
+        if current_char == "(":
+            self.add_token(TokenType.LEFT_PAREN)
+        elif current_char == ")":
+            self.add_token(TokenType.RIGHT_PAREN)
+        elif current_char == "{":
+            self.add_token(TokenType.LEFT_BRACE)
+        elif current_char == "}":
+            self.add_token(TokenType.RIGHT_BRACE)
+        elif current_char == ",":
+            self.add_token(TokenType.COMMA)
+        elif current_char == ".":
+            self.add_token(TokenType.DOT)
+        elif current_char == "-":
+            self.add_token(TokenType.MINUS)
+        elif current_char == "+":
+            self.add_token(TokenType.PLUS)
+        elif current_char == ";":
+            self.add_token(TokenType.SEMICOLON)
+        elif current_char == "*":
+            self.add_token(TokenType.STAR)
         
+
+    
+    def scan_tokens(self):
+        while not self.is_at_end():
+            self.start = self.current
+            self.scan_token()
+
+        self.tokens.append(Token(TokenType.EOF, "", None, self.line))
+        return self.tokens
+
+
         
