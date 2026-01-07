@@ -52,6 +52,53 @@ class Scanner:
         self.tokens.append(token)
 
 
+    def string(self):
+
+        next_char = self.peek()
+
+        while next_char != "\0" and next_char != '"':
+            curr_char = self.advance()
+            if curr_char == "\n":
+                self.line += 1
+            next_char = self.peek()
+        
+        if next_char == "\0":
+            print(f"Error: String not closed properly {self.line}")
+            return 
+
+        if next_char == '"':
+            self.advance()
+            self.add_token(TokenType.STRING, self.source[self.start + 1 : self.current - 1])
+
+
+    def is_digit(self, n):
+        return "0" <= n <= "9"
+
+
+    def number(self):
+        next_char = self.peek()      
+
+        while next_char != '\0':
+
+            if self.is_digit(next_char):
+                self.advance()
+
+            elif self.peek() == ".":
+
+                if self.is_digit(self.peek_next()):
+                    self.advance()
+
+                while self.is_digit(self.peek()):
+                    self.advance()
+
+            elif not self.is_digit(next_char):
+                break
+
+            next_char = self.peek()
+        
+        self.add_token(TokenType.NUMBER, float(self.source[self.start : self.current]))
+
+
     def scan_token(self):
         current_char = self.advance()
 
@@ -75,6 +122,33 @@ class Scanner:
             self.add_token(TokenType.SEMICOLON)
         elif current_char == "*":
             self.add_token(TokenType.STAR)
+        elif current_char == " " or current_char == "\t" or current_char == "\r":
+            pass
+        elif current_char == "\n":
+            self.line += 1
+        elif current_char == "/" and not self.match("/"):
+            self.add_token(TokenType.SLASH)
+        elif current_char == "/" and self.match("/"):
+            next_char = self.peek()
+            while next_char != "\0" and next_char != "\n":
+                self.advance()
+                next_char = self.peek()
+        elif current_char == "!":
+            self.add_token(TokenType.BANG_EQUAL) if self.match("=") else self.add_token(TokenType.BANG)
+        elif current_char == "=":
+            self.add_token(TokenType.EQUAL_EQUAL) if self.match("=") else self.add_token(TokenType.EQUAL)
+        elif current_char == "<":
+            self.add_token(TokenType.LESS_EQUAL) if self.match("=") else self.add_token(TokenType.LESS)
+        elif current_char == ">":
+            self.add_token(TokenType.GREATER_EQUAL) if self.match("=") else self.add_token(TokenType.GREATER)
+        elif current_char == '"':
+            self.string()
+
+
+
+            
+            
+        
         
 
     
