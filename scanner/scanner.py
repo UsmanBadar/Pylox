@@ -1,5 +1,6 @@
-from .token_type import TokenType
+from .token_type import TokenType, KEY_WORDS_MAP
 from .token import Token
+from .pylox import PyLox
 
 class Scanner:
     def __init__(self, source):
@@ -63,7 +64,7 @@ class Scanner:
             next_char = self.peek()
         
         if next_char == "\0":
-            print(f"Error: String not closed properly {self.line}")
+            PyLox.error(self.line, "Unterminated string")
             return 
 
         if next_char == '"':
@@ -78,26 +79,40 @@ class Scanner:
     def number(self):
         next_char = self.peek()      
 
-        while next_char != '\0':
+        while next_char != '\0' and self.is_digit(next_char):
+            self.advance()
+            next_char = self.peek()
 
-            if self.is_digit(next_char):
+        if next_char == ".":
+
+            if self.is_digit(self.peek_next()):
                 self.advance()
 
-            elif self.peek() == ".":
-
-                if self.is_digit(self.peek_next()):
-                    self.advance()
-
-                while self.is_digit(self.peek()):
-                    self.advance()
-
-            elif not self.is_digit(next_char):
-                break
-
-            next_char = self.peek()
+            while self.is_digit(self.peek()):
+                self.advance()
         
         self.add_token(TokenType.NUMBER, float(self.source[self.start : self.current]))
 
+
+    def is_alpha(self, c):
+        return "a" <= c <= "z" or "A" <= c <= "Z" or c == "_"
+    
+    
+    def is_alpha_numeric(self, c):
+        return self.is_alpha(c) or self.is_digit(c)
+    
+
+    def identifier(self):
+        next_char = self.peek()
+        while self.is_alpha_numeric(next_char):
+            self.advance()
+            next_char = self.peek()
+        
+        text = self.source[self.start : self.current]
+        token_type = KEY_WORDS_MAP.get(text, TokenType.IDENTIFIER)
+
+        self.add_token(token_type) 
+        
 
     def scan_token(self):
         current_char = self.advance()
@@ -126,13 +141,14 @@ class Scanner:
             pass
         elif current_char == "\n":
             self.line += 1
-        elif current_char == "/" and not self.match("/"):
-            self.add_token(TokenType.SLASH)
-        elif current_char == "/" and self.match("/"):
-            next_char = self.peek()
-            while next_char != "\0" and next_char != "\n":
-                self.advance()
+        elif current_char == "/":
+            if self.match("/"):
                 next_char = self.peek()
+                while next_char != "\0" and next_char != "\n":
+                    self.advance()
+                    next_char = self.peek()
+            else:
+                self.add_token(TokenType.SLASH)
         elif current_char == "!":
             self.add_token(TokenType.BANG_EQUAL) if self.match("=") else self.add_token(TokenType.BANG)
         elif current_char == "=":
@@ -143,13 +159,12 @@ class Scanner:
             self.add_token(TokenType.GREATER_EQUAL) if self.match("=") else self.add_token(TokenType.GREATER)
         elif current_char == '"':
             self.string()
-
-
-
-            
-            
-        
-        
+        elif self.is_digit(current_char):
+            self.number()
+        elif self.is_alpha(current_char):
+            self.identifier()
+        else:
+            PyLox.error(self.line, "Unexpected character.")
 
     
     def scan_tokens(self):
