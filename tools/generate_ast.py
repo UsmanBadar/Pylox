@@ -22,7 +22,7 @@ def generate_ast():
 
 
 def define_ast(output_dir, base_name, types):
-    dir_path = Path(output_dir)
+    dir_path = Path(".").resolve().parent / output_dir
     file_path = dir_path / "expr.py"
 
     os.makedirs(dir_path, exist_ok=True)
@@ -39,6 +39,11 @@ def define_ast(output_dir, base_name, types):
     try:
         with open(file_path, "w", encoding = "utf-8") as file:
             file.write(header)
+            base_class_line = f"\n\nclass {base_name}:\n"
+            base_class_pass_line = "\tpass\n"
+            base_class_str = base_class_line + base_class_pass_line
+            file.write(base_class_str)
+
             for t_item in types:
                 t_item_splitted = t_item.split(":")
                 classname = t_item_splitted[0].strip()
@@ -46,17 +51,13 @@ def define_ast(output_dir, base_name, types):
                 fields_list = fields_str.split(",")
                 field_names_list = [field_item.strip().split(" ")[1].strip() for field_item in fields_list]
                 field_names_str = ", ".join(field_names_list)
-                class_line = f"\n\nclass {classname}:\n"
+                class_line = f"\n\nclass {classname}({base_name}):\n"
                 init_line = f"\tdef __init__(self, {field_names_str}):\n"
                 body = ""
                 for name in field_names_list:
                     body += f"\t\tself.{name} = {name}\n"
                 class_code_str = class_line + init_line + body
                 file.write(class_code_str)
-
-
-
-
     except Exception as e:
         print(f"File not found. error: {e}")
         sys.exit(1)
